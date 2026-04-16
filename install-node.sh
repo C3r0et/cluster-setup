@@ -41,6 +41,9 @@ echo -e "${CYAN}"
 echo "  ⚡ AKU CLUSTER INFRASTRUCTURE ⚡"
 echo "  ==============================="
 echo -e "${NC}"
+# Force input untuk interaktif jika dijalankan via pipe (curl | bash)
+exec < /dev/tty
+
 echo "Pilih Role untuk PC ini:"
 echo "  1) Load Balancer (Dashboard + Nginx)"
 echo "  2) WA Gateway (Baileys Service)"
@@ -48,7 +51,7 @@ echo "  3) RCS Message (Playwright Service)"
 echo "  4) Autocall (SIP Service)"
 echo "  5) Hanya Setup Dasar & Agent (ZRAM, Node, PM2)"
 echo ""
-read -p "Masukkan pilihan [1-5]: " ROLE_CHOICE < /dev/tty
+read -p "Masukkan pilihan [1-5]: " ROLE_CHOICE
 
 case $ROLE_CHOICE in
   1) ROLE="LB";   SCRIPT="deploy-lb.sh";    AGENT=true ;;
