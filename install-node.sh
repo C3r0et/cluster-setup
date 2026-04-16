@@ -48,7 +48,7 @@ echo "  3) RCS Message (Playwright Service)"
 echo "  4) Autocall (SIP Service)"
 echo "  5) Hanya Setup Dasar & Agent (ZRAM, Node, PM2)"
 echo ""
-read -p "Masukkan pilihan [1-5]: " ROLE_CHOICE
+read -p "Masukkan pilihan [1-5]: " ROLE_CHOICE < /dev/tty
 
 case $ROLE_CHOICE in
   1) ROLE="LB";   SCRIPT="deploy-lb.sh";    AGENT=true ;;
