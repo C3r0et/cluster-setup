@@ -44,19 +44,21 @@ fi
 log_section "TAHAP 2: Clone/Update Repository"
 if [ -d "$APP_DIR/.git" ]; then
     cd "$APP_DIR"
-    git pull origin "$GITHUB_BRANCH"
+    sudo -u "$TARGET_USER" git pull origin "$GITHUB_BRANCH"
 else
     git clone --branch "$GITHUB_BRANCH" "$GITHUB_REPO" "$APP_DIR"
+    chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
     cd "$APP_DIR"
 fi
 
 # -- TAHAP 3: Node Dependencies --
 log_section "TAHAP 3: Node Dependencies"
 SERVER_DIR="$APP_DIR/server"
+chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
 cd "$SERVER_DIR"
-if [ ! -d "node_modules" ]; then
+if [ ! -d "node_modules" ] || [ -f "/tmp/force_reinstall" ]; then
     export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-    npm install --omit=dev
+    sudo -u "$TARGET_USER" npm install --omit=dev
 else
     log_warn "node_modules sudah ada. Lewati."
 fi
@@ -84,5 +86,16 @@ chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
 sudo -u "$TARGET_USER" pm2 delete "$APP_NAME" 2>/dev/null || true
 sudo -u "$TARGET_USER" bash -c "cd $SERVER_DIR && pm2 start index.js --name '$APP_NAME' --max-memory-restart 600M --restart-delay 5000"
 sudo -u "$TARGET_USER" pm2 save
+
+# -- TAHAP 6: Health Debug --
+log_section "TAHAP 6: Diagnosa Layanan"
+sleep 2
+STATUS=$(sudo -u "$TARGET_USER" pm2 jlist | grep -o "\"name\":\"$APP_NAME\",\"pm2_env\":{[^}]*\"status\":\"[^\"]*\"" | grep -o "\"status\":\"[^\"]*\"" | cut -d'"' -f4)
+if [ "$STATUS" != "online" ]; then
+    log_error "Layanan $APP_NAME GAGAL BERJALAN (Status: $STATUS). Menampilkan log terbaru:"
+    sudo -u "$TARGET_USER" pm2 logs "$APP_NAME" --lines 30 --no-daemon
+else
+    log_info "Layanan $APP_NAME berjalan normal."
+fi
 
 log_section "✅ Autocall Deploy SELESAI"

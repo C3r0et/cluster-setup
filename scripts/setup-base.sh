@@ -87,18 +87,36 @@ if ! id "$TARGET_USER" &>/dev/null; then
     log_warn "User 'sss' tidak ditemukan. Menggunakan root."
 fi
 
-if ! command -v pm2 &>/dev/null; then
-    npm install -g pm2
-    
-    # Hapus PM2 root jika ada
+# Pastikan Node.js global binaries bisa diakses
+npm install -g pm2 2>/dev/null || true
+
+# DETEKSI DAN PAKSA MIGRASI JIKA MASIH ROOT
+# Jika target adalah sss tapi pm2-root aktif, kita bongkar
+if [ "$TARGET_USER" = "sss" ] && (systemctl is-active --quiet pm2-root || [ -d /root/.pm2 ]); then
+    log_warn "Mendeteksi PM2 masih berjalan di konteks ROOT. Memulai migrasi ke $TARGET_USER..."
     pm2 kill 2>/dev/null || true
     systemctl stop pm2-root 2>/dev/null || true
     systemctl disable pm2-root 2>/dev/null || true
+    rm -f /etc/systemd/system/pm2-root.service
+fi
+
+# Setup startup untuk target user jika belum ada
+if ! systemctl is-active --quiet "pm2-$TARGET_USER"; then
+    log_info "Menyiapkan PM2 Startup untuk user $TARGET_USER..."
+    # Bersihkan file sampah lama jika ada
+    sudo -u "$TARGET_USER" pm2 kill 2>/dev/null || true
     
-    # Setup startup untuk target user
-    sudo -u "$TARGET_USER" pm2 startup systemd -u "$TARGET_USER" --hp "/home/$TARGET_USER" | bash
+    # Jalankan perintah startup
+    STARTUP_CMD=$(sudo -u "$TARGET_USER" pm2 startup systemd -u "$TARGET_USER" --hp "/home/$TARGET_USER" | grep "sudo env")
+    if [ -n "$STARTUP_CMD" ]; then
+        eval "$STARTUP_CMD"
+    fi
     systemctl enable "pm2-$TARGET_USER"
-    
+    systemctl start "pm2-$TARGET_USER"
+fi
+
+# Pastikan logrotate terpasang di user target
+if ! sudo -u "$TARGET_USER" pm2 list | grep -q "pm2-logrotate"; then
     sudo -u "$TARGET_USER" pm2 install pm2-logrotate
     sudo -u "$TARGET_USER" pm2 set pm2-logrotate:max_size 50M
     sudo -u "$TARGET_USER" pm2 set pm2-logrotate:retain 5

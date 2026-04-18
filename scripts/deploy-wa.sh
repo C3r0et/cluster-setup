@@ -28,22 +28,28 @@ EMPLOYEE_DB_NAME="audit_logs"
 WA_DB_NAME="wa_gateway"
 GEMINI_API_KEY="AIzaSyDWabRs6uUYFjxaCUrheChYVcmTFZRlb8Y"
 
+TARGET_USER="sss"
+if ! id "$TARGET_USER" &>/dev/null; then TARGET_USER="root"; fi
+
 log_section "Deploy WA Gateway (Baileys)"
 
 # -- TAHAP 1: Clone/Update --
 log_section "TAHAP 1: Clone/Update Repository"
 if [ -d "$APP_DIR/.git" ]; then
     cd "$APP_DIR"
-    git pull origin "$GITHUB_BRANCH"
+    sudo -u "$TARGET_USER" git pull origin "$GITHUB_BRANCH"
 else
     git clone --branch "$GITHUB_BRANCH" "$GITHUB_REPO" "$APP_DIR"
+    chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
     cd "$APP_DIR"
 fi
 
 # -- TAHAP 2: Dependencies --
 log_section "TAHAP 2: Node Dependencies"
+chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
+cd "$APP_DIR"
 if [ ! -d "node_modules" ]; then
-    npm install --omit=dev
+    sudo -u "$TARGET_USER" npm install --omit=dev
 else
     log_warn "node_modules sudah ada. Lewati."
 fi
@@ -67,8 +73,9 @@ EOF
 
 # -- TAHAP 4: PM2 --
 log_section "TAHAP 4: Registrasi PM2"
-pm2 delete "$APP_NAME" 2>/dev/null || true
-pm2 start index.js --name "$APP_NAME" --max-memory-restart 768M --restart-delay 5000
-pm2 save
+chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
+sudo -u "$TARGET_USER" pm2 delete "$APP_NAME" 2>/dev/null || true
+sudo -u "$TARGET_USER" bash -c "cd $APP_DIR && pm2 start index.js --name '$APP_NAME' --max-memory-restart 768M --restart-delay 5000"
+sudo -u "$TARGET_USER" pm2 save
 
 log_section "✅ WA Gateway Deploy SELESAI"

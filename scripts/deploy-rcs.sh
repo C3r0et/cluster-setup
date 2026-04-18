@@ -45,17 +45,20 @@ fi
 log_section "TAHAP 2: Clone/Update Repository"
 if [ -d "$APP_DIR/.git" ]; then
     cd "$APP_DIR"
-    git fetch --all
-    git reset --hard origin/"$GITHUB_BRANCH"
+    sudo -u "$TARGET_USER" git fetch --all
+    sudo -u "$TARGET_USER" git reset --hard origin/"$GITHUB_BRANCH"
 else
     git clone --branch "$GITHUB_BRANCH" "$GITHUB_REPO" "$APP_DIR"
+    chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
     cd "$APP_DIR"
 fi
 
 # -- TAHAP 3: Node Dependencies & Playwright --
 log_section "TAHAP 3: Node Dependencies & Playwright"
+chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
+cd "$APP_DIR"
 if [ ! -d "node_modules" ]; then
-    npm install --omit=dev
+    sudo -u "$TARGET_USER" npm install --omit=dev
 else
     log_warn "node_modules sudah ada. Lewati."
 fi
