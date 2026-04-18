@@ -20,6 +20,9 @@ GITHUB_BRANCH="main"
 AGENT_DIR="/opt/monitor-agent"
 PUSH_INTERVAL="3000"
 
+TARGET_USER="sss"
+if ! id "$TARGET_USER" &>/dev/null; then TARGET_USER="root"; fi
+
 log_section "Deploy Monitoring Agent"
 
 CURRENT_IP=$(hostname -I | awk '{print $1}')
@@ -58,8 +61,9 @@ EOF
 
 # -- TAHAP 4: PM2 --
 log_section "TAHAP 4: Registrasi PM2"
-pm2 delete "monitor-agent" 2>/dev/null || true
-pm2 start agent.js --name "monitor-agent" --max-memory-restart 80M
-pm2 save
+chown -R "$TARGET_USER:$TARGET_USER" "$AGENT_DIR"
+sudo -u "$TARGET_USER" pm2 delete "monitor-agent" 2>/dev/null || true
+sudo -u "$TARGET_USER" bash -c "cd $AGENT_SRC && pm2 start agent.js --name 'monitor-agent' --max-memory-restart 80M"
+sudo -u "$TARGET_USER" pm2 save
 
 log_section "✅ Agent Deploy SELESAI"

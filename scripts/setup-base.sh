@@ -79,15 +79,33 @@ if ! command -v node &>/dev/null; then
     log_info "Node.js terinstall: $(node -v)"
 fi
 
-# -- TAHAP 6: PM2 Setup --
+# -- TAHAP 6: PM2 & Logrotate --
 log_section "TAHAP 6: PM2 & Logrotate"
+TARGET_USER="sss"
+if ! id "$TARGET_USER" &>/dev/null; then
+    TARGET_USER="root"
+    log_warn "User 'sss' tidak ditemukan. Menggunakan root."
+fi
+
 if ! command -v pm2 &>/dev/null; then
     npm install -g pm2
-    pm2 startup systemd -u root --hp /root
-    systemctl enable pm2-root
-    pm2 install pm2-logrotate
-    pm2 set pm2-logrotate:max_size 50M
-    pm2 set pm2-logrotate:retain 5
+    
+    # Hapus PM2 root jika ada
+    pm2 kill 2>/dev/null || true
+    systemctl stop pm2-root 2>/dev/null || true
+    systemctl disable pm2-root 2>/dev/null || true
+    
+    # Setup startup untuk target user
+    sudo -u "$TARGET_USER" pm2 startup systemd -u "$TARGET_USER" --hp "/home/$TARGET_USER" | bash
+    systemctl enable "pm2-$TARGET_USER"
+    
+    sudo -u "$TARGET_USER" pm2 install pm2-logrotate
+    sudo -u "$TARGET_USER" pm2 set pm2-logrotate:max_size 50M
+    sudo -u "$TARGET_USER" pm2 set pm2-logrotate:retain 5
 fi
+
+# Ensure /opt is accessible
+mkdir -p /opt
+chown -R "$TARGET_USER:$TARGET_USER" /opt
 
 log_section "✅ Setup Dasar SELESAI"

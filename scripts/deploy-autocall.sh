@@ -26,6 +26,9 @@ DB_PASSWORD="sahabat25*"
 EMPLOYEE_DB_NAME="app"
 SIP_NO_AUTO_62="true"
 
+TARGET_USER="sss"
+if ! id "$TARGET_USER" &>/dev/null; then TARGET_USER="root"; fi
+
 log_section "Deploy Autocall (SIP System)"
 
 # -- TAHAP 1: System Dependencies --
@@ -77,8 +80,9 @@ EOF
 
 # -- TAHAP 5: PM2 --
 log_section "TAHAP 5: Registrasi PM2"
-pm2 delete "$APP_NAME" 2>/dev/null || true
-pm2 start index.js --name "$APP_NAME" --max-memory-restart 600M --restart-delay 5000
-pm2 save
+chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
+sudo -u "$TARGET_USER" pm2 delete "$APP_NAME" 2>/dev/null || true
+sudo -u "$TARGET_USER" bash -c "cd $SERVER_DIR && pm2 start index.js --name '$APP_NAME' --max-memory-restart 600M --restart-delay 5000"
+sudo -u "$TARGET_USER" pm2 save
 
 log_section "✅ Autocall Deploy SELESAI"

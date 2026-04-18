@@ -13,6 +13,9 @@ log_section() { echo -e "\n${BLUE}========================================${NC}"
 
 if [ "$EUID" -ne 0 ]; then log_error "Jalankan sebagai root."; fi
 
+TARGET_USER="sss"
+if ! id "$TARGET_USER" &>/dev/null; then TARGET_USER="root"; fi
+
 # --- Konfigurasi ---
 GITHUB_REPO="https://github.com/C3r0et/rcs_massage.git"
 GITHUB_BRANCH="main"
@@ -101,8 +104,9 @@ export DISPLAY=:99
 
 # -- TAHAP 5: PM2 --
 log_section "TAHAP 5: Registrasi PM2"
-pm2 delete "$APP_NAME" 2>/dev/null || true
-pm2 start server.js --name "$APP_NAME" --env DISPLAY=:99 --env PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers --max-memory-restart 700M
-pm2 save
+chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
+sudo -u "$TARGET_USER" pm2 delete "$APP_NAME" 2>/dev/null || true
+sudo -u "$TARGET_USER" bash -c "cd $APP_DIR && pm2 start server.js --name '$APP_NAME' --max-memory-restart 1G --restart-delay 5000"
+sudo -u "$TARGET_USER" pm2 save
 
 log_section "✅ RCS Deploy SELESAI"
