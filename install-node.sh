@@ -48,8 +48,8 @@ echo ""
 read -p "Masukkan pilihan [1-6]: " ROLE_CHOICE
 
 case $ROLE_CHOICE in
-  1) ROLE="LB";   SCRIPT="deploy-loadbalancer.sh"; AGENT=true ;;
-  2) ROLE="WA";   SCRIPT="deploy-wa-gateway.sh";   AGENT=true ;;
+  1) ROLE="LB";   SCRIPT="deploy-lb.sh";    AGENT=true ;;
+  2) ROLE="WA";   SCRIPT="deploy-wa.sh";    AGENT=true ;;
   3) ROLE="RCS";  SCRIPT="deploy-rcs.sh";          AGENT=true ;;
   4) ROLE="CALL"; SCRIPT="deploy-autocall.sh";     AGENT=true ;;
   5) ROLE="BASE"; SCRIPT="";                        AGENT=true ;;
