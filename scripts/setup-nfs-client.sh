@@ -10,7 +10,7 @@ set -e
 # Konfigurasi
 SERVER_IP="192.168.56.250"
 SERVER_PATH="/var/nfs/wa_uploads"
-LOCAL_PATH="/home/sss/wa-gateway-baileys/public/uploads"
+LOCAL_PATH="/opt/wa-gateway/public/uploads"
 
 echo "🔄 Menginstall nfs-common..."
 sudo apt update

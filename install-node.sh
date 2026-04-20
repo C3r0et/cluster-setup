@@ -19,6 +19,18 @@ if [ "$EUID" -ne 0 ]; then
   log_error "Harus dijalankan sebagai root: sudo bash install-node.sh"
 fi
 
+# --- TAHAP 0: Memastikan Repository Tersedia ---
+if [ ! -d "scripts" ]; then
+    log_info "Folder 'scripts' tidak ditemukan. Mengunduh repository dari GitHub..."
+    if ! command -v git &>/dev/null; then
+        apt-get update && apt-get install -y git
+    fi
+    git clone https://github.com/C3r0et/cluster-setup.git ./tmp_repo
+    mv ./tmp_repo/scripts ./scripts
+    mv ./tmp_repo/*.sh ./ 2>/dev/null || true
+    rm -rf ./tmp_repo
+fi
+
 # Tampilan Selamat Datang
 clear
 echo -e "${CYAN}"
@@ -30,9 +42,10 @@ echo "  1) Load Balancer (Dashboard + Nginx)"
 echo "  2) WA Gateway (Baileys Service)"
 echo "  3) RCS Message (Playwright Service)"
 echo "  4) Autocall (SIP Service)"
-echo "  5) Hanya Setup Dasar & Agent (ZRAM, Node, PM2)"
+echo "  5) Setup Dasar Saja (ZRAM, Node, PM2)"
+echo "  6) Sinkronisasi Storage (NFS Server/Client)"
 echo ""
-read -p "Masukkan pilihan [1-5]: " ROLE_CHOICE
+read -p "Masukkan pilihan [1-6]: " ROLE_CHOICE
 
 case $ROLE_CHOICE in
   1) ROLE="LB";   SCRIPT="deploy-loadbalancer.sh"; AGENT=true ;;
@@ -40,6 +53,7 @@ case $ROLE_CHOICE in
   3) ROLE="RCS";  SCRIPT="deploy-rcs.sh";          AGENT=true ;;
   4) ROLE="CALL"; SCRIPT="deploy-autocall.sh";     AGENT=true ;;
   5) ROLE="BASE"; SCRIPT="";                        AGENT=true ;;
+  6) ROLE="NFS";  SCRIPT="setup-cluster-nfs.sh";   AGENT=false ;;
   *) log_error "Pilihan tidak valid." ;;
 esac
 

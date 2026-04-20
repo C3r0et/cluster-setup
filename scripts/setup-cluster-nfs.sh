@@ -13,9 +13,9 @@ NFS_BASE="/var/nfs"
 WA_PATH_SERVER="$NFS_BASE/wa_uploads"
 RCS_PATH_SERVER="$NFS_BASE/rcs_sessions"
 
-WA_PATH_CLIENT="/home/sss/wa-gateway-baileys/public/uploads"
-RCS_PATH_CLIENT="/home/sss/rcs_massage/sessions"
-AUTOCALL_PATH_CLIENT="/home/sss/sistem-autocall/Download_Recordings"
+WA_PATH_CLIENT="/opt/wa-gateway/public/uploads"
+RCS_PATH_CLIENT="/opt/rcs-message/sessions"
+AUTOCALL_PATH_CLIENT="/opt/autocall/recordings"
 
 show_menu() {
     clear

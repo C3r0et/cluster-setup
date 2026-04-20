@@ -47,7 +47,7 @@ if [ ! -d "node_modules" ]; then
 else
     log_warn "node_modules sudah ada. Lewati."
 fi
-mkdir -p sessions logs
+mkdir -p sessions logs public/uploads
 chmod 750 sessions
 
 # -- TAHAP 3: .env --
