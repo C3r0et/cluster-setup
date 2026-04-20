@@ -19,17 +19,20 @@ if [ "$EUID" -ne 0 ]; then
   log_error "Harus dijalankan sebagai root: sudo bash install-node.sh"
 fi
 
-# --- TAHAP 0: Memastikan Repository Tersedia ---
-if [ ! -d "scripts" ]; then
-    log_info "Folder 'scripts' tidak ditemukan. Mengunduh repository dari GitHub..."
-    if ! command -v git &>/dev/null; then
-        apt-get update && apt-get install -y git
+# --- TAHAP 0: Kontrol Repository & Fungsi Helper ---
+BASE_URL="https://raw.githubusercontent.com/C3r0et/cluster-setup/main"
+
+ensure_script() {
+    local script_name=$1
+    mkdir -p scripts
+    if [ ! -f "scripts/$script_name" ] || [ "$FORCE_UPDATE" = "true" ]; then
+        log_info "Mendownload/Memperbarui $script_name..."
+        if ! curl -s -k -f "$BASE_URL/scripts/$script_name" -o "scripts/$script_name"; then
+            log_error "Gagal mendownload $script_name dari GitHub."
+        fi
+        chmod +x "scripts/$script_name"
     fi
-    git clone https://github.com/C3r0et/cluster-setup.git ./tmp_repo
-    mv ./tmp_repo/scripts ./scripts
-    mv ./tmp_repo/*.sh ./ 2>/dev/null || true
-    rm -rf ./tmp_repo
-fi
+}
 
 # Tampilan Selamat Datang
 clear
@@ -63,6 +66,7 @@ log_info "Target IP: $CURRENT_IP"
 
 # --- TAHAP 1: Setup Dasar ---
 log_section "TAHAP 1: Setup Dasar (OS & Dependencies)"
+ensure_script "setup-base.sh"
 if [ -f "scripts/setup-base.sh" ]; then
     bash scripts/setup-base.sh
 else
@@ -72,6 +76,7 @@ fi
 # --- TAHAP 2: Deploy Role ---
 if [ ! -z "$SCRIPT" ]; then
     log_section "TAHAP 2: Deploy Service [$ROLE]"
+    ensure_script "$SCRIPT"
     if [ -f "scripts/$SCRIPT" ]; then
         bash "scripts/$SCRIPT"
     else
@@ -84,6 +89,7 @@ fi
 # --- TAHAP 3: Deploy Monitor Agent ---
 if [ "$AGENT" = true ]; then
     log_section "TAHAP 3: Deploy Monitoring Agent"
+    ensure_script "deploy-agent.sh"
     if [ -f "scripts/deploy-agent.sh" ]; then
         bash scripts/deploy-agent.sh
     else
